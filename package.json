@@ -1,0 +1,26 @@
+{
+	"name": "@janis-commerce/app-storage",
+	"version": "0.0.1",
+	"description": "App Storage",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/janis-commerce/app-storage.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/janis-commerce/app-storage/issues"
+	},
+	"homepage": "https://github.com/janis-commerce/app-storage#readme",
+	"devDependencies": {
+		"eslint": "^9.35.0",
+		"mocha": "^11.7.2",
+		"prettier": "^3.6.2",
+		"sinon": "^21.0.0"
+	}
+}

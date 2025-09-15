@@ -1,0 +1,69 @@
+name: NPM Publish
+
+on:
+  push:
+    tags: 
+      - '*'
+      - '!*-beta*' 
+      - '!*-alpha*' 
+      - '!*-rc*'    
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          registry-url: https://registry.npmjs.org/
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        run: npm run lint
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          registry-url: https://registry.npmjs.org/
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Publish to NPM
+        run: npm publish --access private
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  send-slack-message:
+    needs: publish-npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Send release notification
+        run: bash ./scripts/release-notes.sh
+        env:
+          RELEASE_SLACK_WEBHOOK_URL: ${{ secrets.RELEASE_SLACK_WEBHOOK_URL }}
