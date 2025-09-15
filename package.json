@@ -10,17 +10,28 @@
 		"type": "git",
 		"url": "git+https://github.com/janis-commerce/app-storage.git"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": [
+		"janiscommerce",
+		"app",
+		"storage"
+	],
+	"author": "Janis Commerce",
 	"license": "ISC",
 	"bugs": {
 		"url": "https://github.com/janis-commerce/app-storage/issues"
 	},
 	"homepage": "https://github.com/janis-commerce/app-storage#readme",
+	"dependencies": {
+		"react-native-mmkv": "2.12.2"
+	},
 	"devDependencies": {
 		"eslint": "^9.35.0",
 		"mocha": "^11.7.2",
 		"prettier": "^3.6.2",
-		"sinon": "^21.0.0"
+		"sinon": "^21.0.0",
+		"@janiscommerce/app-device-info": "^1.1.0"
+	},
+	"peerDependencies": {
+		"@janiscommerce/app-device-info": "^1.1.0"
 	}
 }
