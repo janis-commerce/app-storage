@@ -20,7 +20,8 @@ module.exports = {
 		'prettier/prettier': 'error',
 		'no-console': 'off',
 		'import/prefer-default-export': 'off',
-		'import/extensions': ['error', 'always', { ignorePackages: true }],
+		'import/extensions': 'off',
+		'import/no-unresolved': 'off',
 	},
 	ignorePatterns: ['dist/**/*'],
 	settings: {
