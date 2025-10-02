@@ -79,7 +79,7 @@ class Storage {
 
 		if (options?.expiresAt != null) {
 			const minutes = options.expiresAt;
-			const expiresAt = Date.now() + minutes * 60_000;
+			const expiresAt = Date.now() + minutes * Storage.MILLISECONDS_PER_MINUTE;
 
 			this.storage.set(metaKey, JSON.stringify({ expiresAt }));
 		}
