@@ -62,20 +62,24 @@ class Storage {
 		const valueType = typeof value;
 		if (valueType === 'string') {
 			this.storage.set(storageKey, value as string);
-		} else if (valueType === 'number' || valueType === 'boolean') {
+			return;
+		}
+
+		if (valueType === 'number' || valueType === 'boolean') {
 			this.storage.set(storageKey, String(value));
-		} else {
-			try {
-				const serialized = JSON.stringify(value);
-				this.storage.set(storageKey, serialized);
-			} catch {
-				this.storage.set(storageKey, String(value));
-			}
+			return;
+		}
+
+		try {
+			const serialized = JSON.stringify(value);
+			this.storage.set(storageKey, serialized);
+		} catch {
+			this.storage.set(storageKey, String(value));
 		}
 
 		if (options?.expiresAt != null) {
 			const minutes = options.expiresAt;
-			const expiresAt = Date.now() + minutes * Storage.MILLISECONDS_PER_MINUTE;
+			const expiresAt = Date.now() + minutes * 60_000;
 
 			this.storage.set(metaKey, JSON.stringify({ expiresAt }));
 		}
