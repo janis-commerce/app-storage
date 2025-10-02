@@ -8,7 +8,8 @@ const mockMMKVInstance = {
 		mockStorage.set(key, value);
 	}),
 	getString: vi.fn((key: string) => {
-		return mockStorage.get(key) || null;
+		const value = mockStorage.get(key);
+		return value !== undefined ? value : undefined;
 	}),
 	delete: vi.fn((key: string) => {
 		mockStorage.delete(key);

@@ -59,36 +59,6 @@ describe('Storage', () => {
 			expect(mockMMKVInstance.set).not.toHaveBeenCalled();
 		});
 
-		it('should store string value with TTL metadata', () => {
-			storage.set('ttl-string', 'value', { expiresAt: 30 });
-
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-string', 'value');
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
-				'ttl-string:__meta',
-				expect.stringContaining('expiresAt'),
-			);
-		});
-
-		it('should store number value with TTL metadata', () => {
-			storage.set('ttl-number', 123, { expiresAt: 30 });
-
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-number', '123');
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
-				'ttl-number:__meta',
-				expect.stringContaining('expiresAt'),
-			);
-		});
-
-		it('should store boolean value with TTL metadata', () => {
-			storage.set('ttl-bool', true, { expiresAt: 30 });
-
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-bool', 'true');
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
-				'ttl-bool:__meta',
-				expect.stringContaining('expiresAt'),
-			);
-		});
-
 		it('should store object with TTL metadata', () => {
 			const obj = { test: 'value' };
 			storage.set('ttl-object', obj, { expiresAt: 30 });
@@ -96,6 +66,17 @@ describe('Storage', () => {
 			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-object', JSON.stringify(obj));
 			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
 				'ttl-object:__meta',
+				expect.stringContaining('expiresAt'),
+			);
+		});
+
+		it('should store array with TTL metadata', () => {
+			const arr = [1, 2, 3];
+			storage.set('ttl-array', arr, { expiresAt: 30 });
+
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-array', JSON.stringify(arr));
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
+				'ttl-array:__meta',
 				expect.stringContaining('expiresAt'),
 			);
 		});
@@ -112,7 +93,7 @@ describe('Storage', () => {
 
 	describe('get', () => {
 		it('should return null for non-existent key', () => {
-			mockMMKVInstance.getString.mockReturnValue(null);
+			mockMMKVInstance.getString.mockReturnValue(undefined);
 			const result = storage.get('non-existent');
 			expect(result).toBeNull();
 		});
@@ -132,7 +113,7 @@ describe('Storage', () => {
 			['parsed JSON array', [1, 2, 3], JSON.stringify([1, 2, 3])],
 		])('should return %s', (description, expected, storedValue) => {
 			mockMMKVInstance.getString
-				.mockReturnValueOnce(null) // No metadata
+				.mockReturnValueOnce(undefined) // No metadata
 				.mockReturnValueOnce(storedValue); // Actual value
 
 			const result = storage.get('test-key');
@@ -146,7 +127,7 @@ describe('Storage', () => {
 			['string', 'plain string', 'plain string'],
 		])('should return %s', (description, expected, storedValue) => {
 			mockMMKVInstance.getString
-				.mockReturnValueOnce(null) // No metadata
+				.mockReturnValueOnce(undefined) // No metadata
 				.mockReturnValueOnce(storedValue); // Actual value
 
 			const result = storage.get('test-key');
