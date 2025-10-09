@@ -1,6 +1,6 @@
 {
 	"name": "@janiscommerce/app-storage",
-	"version": "0.0.1-beta.3",
+	"version": "0.0.1-beta.4",
 	"description": "App Storage",
 	"main": "dist/index.js",
 	"type": "module",
