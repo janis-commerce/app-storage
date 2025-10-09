@@ -22,12 +22,19 @@ class Storage {
 	private readonly storage: MMKV;
 
 	/**
+	 * The underlying MMKV instance for advanced operations.
+	 * @public
+	 */
+	public readonly db: MMKV;
+
+	/**
 	 * Creates a new Storage instance.
 	 * @param options - Initialization options for the underlying MMKV instance.
 	 */
 	constructor(options: StorageOptions = {}) {
 		const { id } = options;
 		this.storage = new MMKV({ id: id || 'app-storage' });
+		this.db = this.storage;
 	}
 
 	private metaKey(key: string): string {
@@ -147,14 +154,6 @@ class Storage {
 	 */
 	public clear(): void {
 		this.storage.clearAll();
-	}
-
-	/**
-	 * Returns the underlying MMKV instance.
-	 * @returns The raw MMKV storage instance for advanced operations.
-	 */
-	public get getStorage() {
-		return this.storage;
 	}
 }
 export { useMMKVString };
