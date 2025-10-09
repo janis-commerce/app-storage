@@ -1,4 +1,4 @@
-import { MMKV } from 'react-native-mmkv';
+import { MMKV, useMMKVString } from 'react-native-mmkv';
 
 interface StorageOptions {
 	/**
@@ -148,6 +148,14 @@ class Storage {
 	public clear(): void {
 		this.storage.clearAll();
 	}
-}
 
+	/**
+	 * Returns the underlying MMKV instance.
+	 * @returns The raw MMKV storage instance for advanced operations.
+	 */
+	public get getStorage() {
+		return this.storage;
+	}
+}
+export { useMMKVString };
 export default Storage;
