@@ -39,5 +39,11 @@ module.exports = {
 				node: true,
 			},
 		},
+		{
+			files: ['**/*.cjs'],
+			rules: {
+				'@typescript-eslint/no-var-requires': 'off',
+			},
+		},
 	],
 };

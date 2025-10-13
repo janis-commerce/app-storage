@@ -5,7 +5,6 @@ const pkg = require('../package.json');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
-('util');
 const https = require('https');
 
 const url = process.env.RELEASE_SLACK_WEBHOOK_URL;
@@ -22,7 +21,7 @@ const header = `${serviceCode} ${releaseVersion} released! :tada:`;
 
 (async () => {
 	const asyncRequest = util.promisify((requestData, cb) => {
-		const {url: requestUrl, body, ...rest} = requestData;
+		const { url: requestUrl, body, ...rest } = requestData;
 
 		const req = https.request(requestUrl, rest, (res) => {
 			if (res.statusCode !== 200)
