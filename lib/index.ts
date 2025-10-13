@@ -20,6 +20,8 @@ interface StorageOptions {
  */
 class Storage {
 	private readonly storage: MMKV;
+	private static readonly META_SUFFIX = ':__meta';
+	private static readonly MILLISECONDS_PER_MINUTE = 60_000;
 
 	/**
 	 * The underlying MMKV instance for advanced operations.
@@ -38,7 +40,7 @@ class Storage {
 	}
 
 	private metaKey(key: string): string {
-		return `${key}:__meta`;
+		return `${key}${Storage.META_SUFFIX}`;
 	}
 
 	/**
@@ -84,7 +86,7 @@ class Storage {
 
 		if (options?.expiresAt != null) {
 			const minutes = options.expiresAt;
-			const expiresAt = Date.now() + minutes * 60_000;
+			const expiresAt = Date.now() + minutes * Storage.MILLISECONDS_PER_MINUTE;
 
 			this.storage.set(metaKey, JSON.stringify({ expiresAt }));
 		}

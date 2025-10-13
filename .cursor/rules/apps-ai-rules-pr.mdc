@@ -1,0 +1,169 @@
+---
+alwaysApply: true
+---
+
+<!--
+INSTRUCCIÓN:
+- Todas las respuestas, descripciones y textos generados por la IA para este Pull Request deben estar redactados en español, utilizando un lenguaje claro, profesional y conciso.
+- La respuesta SIEMPRE debe estar dentro de un bloque de código con formato Markdown, usando la siguiente estructura:
+
+```md
+# Título del PR
+... contenido ...
+```
+
+- El contenido debe seguir la sintaxis de Markdown para:
+  - Títulos (usando #)
+  - Listas (usando - o *)
+  - Enlaces (usando [texto](mdc:url))
+  - Bloques de código (usando ```)
+  - Énfasis (usando * o _)
+- El archivo debe poder copiarse y pegarse directamente en la descripción del Pull Request.
+-->
+
+# Plantilla de Pull Request (PR) - Janis Apps
+
+---
+
+## Link al ticket
+
+- {{ticket_link}}
+
+<!--
+Regla: El valor debe obtenerse automáticamente del nombre de la branch detectada por la IA, sin requerir intervención del usuario.
+- El nombre de la branch debe contener el ticket como prefijo entre corchetes, por ejemplo: [JMV-3765]-feature-nueva-funcionalidad.
+- El link debe armarse así: https://janiscommerce.atlassian.net/browse/{{ticket}}
+- Si el nombre de la branch NO contiene un ticket válido entre corchetes al inicio (formato [ABC-1234]), la variable debe quedar vacía y no debe aparecer ningún link en la sección.
+-->
+
+## Descripción del requerimiento
+
+- {{requirement_description}}
+
+<!--
+Regla: La IA debe generar una descripción clara y concisa del requerimiento o cambio realizado en este PR.
+Debe responder a la pregunta: ¿Qué se está cambiando o agregando en este pull request?
+-->
+
+## Descripción de la solución
+
+- {{solution_description}}
+
+<!--
+Regla: La IA debe describir de forma clara y concreta cómo se resolvió el requerimiento o problema planteado en el PR.
+Debe responder a la pregunta: ¿Cómo se implementó la solución?
+-->
+
+## Nivel de pruebas requerido
+
+[Documentación y ejemplos](https://janiscommerce.atlassian.net/wiki/spaces/JAPP/pages/3219423233/Guia+y+pautas+para+probar+desarrollos)
+
+| MARCAR | NIVEL                    | DESCRIPCIÓN                                                                                                                    | CONDICIONES                                                                                                      |
+| ------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| [ ]    | CRÍTICO: Cambios Mayores | Se consideran cambios que afectan partes fundamentales del sistema o funcionalidades que impactan múltiples módulos de la app. | Generar APK para pruebas. Utilizar perfil regular. Realizar pruebas exhaustivas en todos los módulos afectados.  |
+| [ ]    | ALTO: Cambios moderados  | Cambios que afectan aspectos importantes pero no críticos de la aplicación.                                                    | Se puede probar localmente, salvo que surja necesidad de crear un APK. Utilizar perfil regular para las pruebas. |
+| [ ]    | MEDIO: Cambios menores   | Cambios menores que impactan una parte del flujo o ajustes que no modifican la funcionalidad general.                          | Validación localmente. Se puede usar perfil dev                                                                  |
+| [ ]    | BAJO: Ajustes            | Modificaciones pequeñas que no impactan el rendimiento o funcionalidad general de la app.                                      | Validación localmente. Se puede usar perfil dev                                                                  |
+
+<!--
+Regla: La IA debe mantener la tabla completa con todos los niveles de pruebas y marcar únicamente con [X] el nivel que corresponda al cambio realizado.
+- NO se deben eliminar filas de la tabla
+- Solo se debe cambiar [ ] por [X] en el nivel correspondiente
+- Los demás niveles deben mantener los corchetes vacíos [ ]
+- Se debe mantener todo el formato y contenido original de la tabla
+-->
+
+## ¿Cómo se puede probar?
+
+| Caso a probar | Resultado esperado  | Resultado obtenido | Observaciones |
+| ------------- | ------------------- | ------------------ | ------------- |
+| {{test_case}} | {{expected_result}} | ✅ o ❌            | {{notes}}     |
+
+<!--
+Regla: La IA debe generar los casos de prueba basados en los cambios realizados en el PR.
+Para cada caso debe especificar:
+1. Caso a probar: Descripción clara del escenario de prueba
+2. Resultado esperado: Comportamiento que debería ocurrir
+3. Resultado obtenido: El desarrollador debe marcar con ✅ si fue exitoso o ❌ si falló
+4. Observaciones: Espacio para notas adicionales, comportamientos inesperados o detalles importantes
+
+Notas:
+- Incluir casos de prueba tanto positivos como negativos
+- Si se requieren pasos de configuración (npm install, docker, etc), agregarlos como nota antes de la tabla
+- Para copiar los emojis: ✅ ❌
+-->
+
+## Evidencias, pruebas de cómo funciona
+
+- {{evidence}}
+
+## Link a la documentación
+
+- {{documentation_link}}
+
+## Datos extra a tener en cuenta
+
+- {{extra_notes}}
+
+## CHANGELOG (English only):
+
+<!--
+Regla: El contenido de esta sección (títulos de los bloques y descripciones de los cambios) debe estar únicamente en inglés, aunque el resto del Pull Request esté en español.
+La IA debe generar los ítems del changelog en inglés, incluso si el resto del PR está en español. En cada linea al final tiene que estar el link del ticket en formato markdown
+-->
+
+```javascript
+### Added
+{{changelog_added}}
+
+### Changed
+{{changelog_changed}}
+
+### Removed
+{{changelog_removed}}
+
+### Fixed
+{{changelog_fixed}}
+```
+
+<!--
+Regla: La IA debe analizar los cambios realizados en la branch para generar automáticamente el contenido de cada sección del CHANGELOG.
+Solo debe incluir en el changelog los bloques (ADDED, CHANGED, REMOVED, FIXED) que tengan información relevante según los cambios detectados.
+Si un bloque no tiene información, NO debe aparecer en el changelog.
+-->
+
+---
+
+<!--
+## Reglas generales y preguntas previas
+
+- La IA debe analizar los cambios realizados en el código (archivos modificados, agregados, eliminados, nombres de archivos, mensajes de commit y contexto del PR) para inferir y completar automáticamente las secciones del Pull Request.
+- La IA debe detectar automáticamente el nombre de la branch en la que se encuentra el usuario al momento de generar el Pull Request, sin requerir que el usuario la indique manualmente.
+- Si el usuario no provee una descripción explícita, la IA debe intentar deducir:
+  - Qué se está cambiando o agregando.
+  - Qué problema resuelve o qué funcionalidad aporta.
+  - Cuáles son los componentes, funciones, hooks, endpoints, lógica o flujos modificados o agregados.
+  - Cómo se puede probar el cambio, sugiriendo rutas, vistas o flujos relevantes.
+  - El changelog, reflejando fielmente los cambios detectados.
+- La IA debe priorizar la claridad, la utilidad y la reducción de trabajo manual para el usuario, generando textos claros, concisos y útiles para el equipo.
+- Si la IA no puede inferir algún dato, debe dejar la variable vacía o con un comentario indicando que no pudo determinarlo, pero nunca inventar información.
+
+### Preguntas previas para mejorar la redacción del Pull Request
+
+Antes de generar el Pull Request, la IA debe realizar las siguientes preguntas al usuario y utilizar las respuestas para enriquecer cada sección de la plantilla:
+
+1. ¿Cuál es el objetivo principal de este cambio?
+2. ¿Qué problema resuelve o qué funcionalidad agrega?
+3. ¿Qué cambios principales se realizaron?
+4. ¿Qué pasos debe seguir un revisor para probar el cambio?
+5. ¿Se modificaron dependencias o configuraciones importantes?
+6. ¿Hay algo que deba destacarse para el equipo?
+7. ¿Hay documentación, links o tickets relacionados que deban incluirse?
+
+La IA debe utilizar las respuestas para completar y enriquecer cada sección del Pull Request, priorizando la claridad y el contexto.
+-->
+
+7. ¿Hay documentación, links o tickets relacionados que deban incluirse?
+
+La IA debe utilizar las respuestas para completar y enriquecer cada sección del Pull Request, priorizando la claridad y el contexto.
+-->
