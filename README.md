@@ -1,46 +1,171 @@
-# App Storage (MMKV Wrapper)
+# App Storage
 
-Pequeño wrapper sobre `react-native-mmkv` con namespacing para usar en múltiples apps.
+[![npm version](https://badge.fury.io/js/@janis-commerce%2Fapp-storage.svg)](https://www.npmjs.com/package/@janis-commerce/app-storage)
 
-## Instalación
+A thin wrapper around [react-native-mmkv](https://github.com/mrousavy/react-native-mmkv) with optional per-key expiration (TTL).
+
+## Features
+
+- 🚀 Fast and efficient key-value storage powered by MMKV
+- ⏰ Optional TTL (Time To Live) for automatic key expiration
+- 📦 Automatic JSON serialization for objects and arrays
+- 🔒 Type-safe with TypeScript support
+- 🪶 Lightweight and easy to use
+
+## Installation
 
 ```bash
-npm install @janis-commerce/app-storage
-# peer deps si las hubiera
+npm install @janiscommerce/app-storage
 ```
 
-## Uso básico
+### Peer Dependencies
 
-```js
-import { createAppStorage } from '@janis-commerce/app-storage';
+This package requires `react-native-mmkv` as a peer dependency:
 
-// Una instancia por app/namespace
-const storage = createAppStorage({ namespace: 'appA' });
+```bash
+npm install react-native-mmkv
+```
 
+## Quick Start
+
+```typescript
+import Storage from '@janis-commerce/app-storage';
+
+// Create a storage instance
+const storage = new Storage({ id: 'my-app-storage' });
+
+// Store values
 storage.set('token', 'abc123');
-storage.set('profile', { name: 'Jane' });
+storage.set('user', { name: 'Jane', age: 30 });
 
-const token = storage.get('token');
-const profile = storage.get('profile'); // { name: 'Jane' }
+// Retrieve values
+const token = storage.get<string>('token'); // 'abc123'
+const user = storage.get<{ name: string; age: number }>('user'); // { name: 'Jane', age: 30 }
 
+// Remove a key
 storage.remove('token');
-storage.clear(); // limpia solo las claves de appA
+
+// Clear all keys
+storage.clear();
 ```
 
-Para tus 3 apps, crea una instancia por app cambiando `namespace` (`appA`, `appB`, `appC`).
+## Usage with TTL (Time To Live)
 
-## API
+```typescript
+import Storage from '@janis-commerce/app-storage';
 
-- `createAppStorage(options?)`: Crea una instancia aislada.
-  - **options.namespace**: string. Prefijo de claves (default: `default`).
-  - **options.id**: string. Id interno de MMKV (opcional).
-- `storage.set(key, value)`: Guarda valores primitivos u objetos (se serializan en JSON).
-- `storage.get(key, defaultValue?)`: Devuelve el valor parseado (intenta JSON/boolean/number) o `defaultValue` si no existe.
-- `storage.remove(key)`: Elimina una clave.
-- `storage.clear()`: Elimina todas las claves del namespace.
+const storage = new Storage();
 
-## Notas
+// Store a value that expires in 5 minutes
+storage.set('session-token', 'xyz789', { expiresAt: 5 });
 
-- Evita colisiones usando distintos `namespace` por app.
-- Al guardar objetos se usa `JSON.stringify`; al leer se intenta `JSON.parse` y se hace fallback a string/number/boolean.
+// After 5 minutes, this will return null
+const token = storage.get('session-token');
+```
 
+## Multiple Storage Instances
+
+You can create multiple isolated storage instances for different purposes:
+
+```typescript
+import Storage from '@janis-commerce/app-storage';
+
+const userStorage = new Storage({ id: 'user-data' });
+const cacheStorage = new Storage({ id: 'cache' });
+const sessionStorage = new Storage({ id: 'session' });
+
+userStorage.set('profile', { name: 'John' });
+cacheStorage.set('last-fetch', Date.now(), { expiresAt: 10 }); // expires in 10 minutes
+sessionStorage.set('temp-data', { foo: 'bar' });
+```
+
+## API Documentation
+
+<a name="Storage"></a>
+
+## Storage
+A thin wrapper around MMKV with optional per-key expiration (TTL).
+
+- Serializes objects/arrays to JSON on set.
+- get() attempts JSON parse; otherwise returns string/number/boolean.
+- Optional per-key expiration via `expiresAt` (minutes from now).
+- Expired keys are automatically removed on get().
+- remove() deletes the value and its expiration metadata.
+
+**Kind**: global class  
+**Access**: public  
+
+* [Storage](#Storage)
+    * [new Storage(options)](#new_Storage_new)
+    * [.set(key, value, options)](#Storage+set)
+    * [.get(key)](#Storage+get) ⇒
+    * [.remove(key)](#Storage+remove)
+    * [.clear()](#Storage+clear)
+
+<a name="new_Storage_new"></a>
+
+### new Storage(options)
+Creates a new Storage instance.
+
+
+| Param | Description |
+| --- | --- |
+| options | Initialization options for the underlying MMKV instance. |
+
+<a name="Storage+set"></a>
+
+### storage.set(key, value, options)
+Stores a value by key with optional expiration.
+
+Semantics:
+- key null/undefined: no-op
+- value null/undefined: no-op (null will not be stored; it is ignored)
+- string/number/boolean are stored as string
+- objects/arrays are serialized to JSON
+
+Expiration:
+- options.expiresAt: minutes from now until expiration.
+- Stored under `${key}:__meta` as an absolute timestamp in milliseconds.
+
+**Kind**: instance method of [<code>Storage</code>](#Storage)  
+
+| Param | Description |
+| --- | --- |
+| key | The storage key. |
+| value | The value to store. |
+| options | Optional expiration configuration. |
+
+<a name="Storage+get"></a>
+
+### storage.get(key) ⇒
+Retrieves a value by key. If expired or metadata is invalid, the key is removed and null is returned.
+
+**Kind**: instance method of [<code>Storage</code>](#Storage)  
+**Returns**: Parsed JSON as T, or string/number/boolean; null if missing/expired/invalid.  
+**Typeparam**: T - Expected value type after JSON parse.  
+
+| Param | Description |
+| --- | --- |
+| key | The storage key. |
+
+<a name="Storage+remove"></a>
+
+### storage.remove(key)
+Removes a key and its expiration metadata.
+
+**Kind**: instance method of [<code>Storage</code>](#Storage)  
+
+| Param | Description |
+| --- | --- |
+| key | The storage key to remove. |
+
+<a name="Storage+clear"></a>
+
+### storage.clear()
+Clears all keys from the current MMKV instance.
+
+**Kind**: instance method of [<code>Storage</code>](#Storage)  
+
+## Author
+
+Janis Commerce
