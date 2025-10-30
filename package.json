@@ -39,6 +39,8 @@
 	},
 	"homepage": "https://github.com/janis-commerce/app-storage#readme",
 	"peerDependencies": {
+		"react": ">=17.0.2 <19.0.0",
+		"react-native": ">=0.67.5 <0.75.0",
 		"react-native-mmkv": "^2.12.2"
 	},
 	"devDependencies": {
