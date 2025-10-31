@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-11-06
+
+### Added
+
+- support up to react 19
+
 ## [1.0.0] - 2025-10-13
 
 ### Added
