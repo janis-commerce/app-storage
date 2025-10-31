@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.1.0-beta.3] -2025-10-31
+
+### Fixed
+
+- eslint warnings
+
 ## [1.1.0-beta.2] -2025-10-31
 
 ### Added
