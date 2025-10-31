@@ -2,9 +2,15 @@
 
 ## [Unreleased]
 
+## [1.1.0-beta.2] -2025-10-31
+
+### Added
+
+- autolinking config
+
 ## [1.1.0-beta.1] -2025-10-31
 
-## Added
+### Added
 
 - react-native-mmkv as a dependency
 
