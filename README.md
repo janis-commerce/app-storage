@@ -26,6 +26,15 @@ This package requires `react-native-mmkv` as a peer dependency:
 npm install react-native-mmkv
 ```
 
+This package uses `react-native-mmkv` as its high-performance native storage engine.
+Because MMKV contains native code (Android/iOS), it must be installed in the host React Native app, not within this package, to ensure proper autolinking and native build integration.
+
+### Why peerDependency instead of dependency?
+
+React Native only autolinks native modules located in the app’s root node_modules.
+If MMKV were installed as a regular dependency, it would live inside
+node_modules/@janiscommerce/app-storage/node_modules/react-native-mmkv, preventing autolinking and causing runtime errors such as:
+
 ## Quick Start
 
 ```typescript
@@ -84,6 +93,7 @@ sessionStorage.set('temp-data', { foo: 'bar' });
 <a name="Storage"></a>
 
 ## Storage
+
 A thin wrapper around MMKV with optional per-key expiration (TTL).
 
 - Serializes objects/arrays to JSON on set.
@@ -93,78 +103,84 @@ A thin wrapper around MMKV with optional per-key expiration (TTL).
 - remove() deletes the value and its expiration metadata.
 
 **Kind**: global class  
-**Access**: public  
+**Access**: public
 
-* [Storage](#Storage)
-    * [new Storage(options)](#new_Storage_new)
-    * [.set(key, value, options)](#Storage+set)
-    * [.get(key)](#Storage+get) ⇒
-    * [.remove(key)](#Storage+remove)
-    * [.clear()](#Storage+clear)
+- [Storage](#Storage)
+    - [new Storage(options)](#new_Storage_new)
+    - [.set(key, value, options)](#Storage+set)
+    - [.get(key)](#Storage+get) ⇒
+    - [.remove(key)](#Storage+remove)
+    - [.clear()](#Storage+clear)
 
 <a name="new_Storage_new"></a>
 
 ### new Storage(options)
+
 Creates a new Storage instance.
 
-
-| Param | Description |
-| --- | --- |
+| Param   | Description                                              |
+| ------- | -------------------------------------------------------- |
 | options | Initialization options for the underlying MMKV instance. |
 
 <a name="Storage+set"></a>
 
 ### storage.set(key, value, options)
+
 Stores a value by key with optional expiration.
 
 Semantics:
+
 - key null/undefined: no-op
 - value null/undefined: no-op (null will not be stored; it is ignored)
 - string/number/boolean are stored as string
 - objects/arrays are serialized to JSON
 
 Expiration:
+
 - options.expiresAt: minutes from now until expiration.
 - Stored under `${key}:__meta` as an absolute timestamp in milliseconds.
 
-**Kind**: instance method of [<code>Storage</code>](#Storage)  
+**Kind**: instance method of [<code>Storage</code>](#Storage)
 
-| Param | Description |
-| --- | --- |
-| key | The storage key. |
-| value | The value to store. |
+| Param   | Description                        |
+| ------- | ---------------------------------- |
+| key     | The storage key.                   |
+| value   | The value to store.                |
 | options | Optional expiration configuration. |
 
 <a name="Storage+get"></a>
 
 ### storage.get(key) ⇒
+
 Retrieves a value by key. If expired or metadata is invalid, the key is removed and null is returned.
 
 **Kind**: instance method of [<code>Storage</code>](#Storage)  
 **Returns**: Parsed JSON as T, or string/number/boolean; null if missing/expired/invalid.  
-**Typeparam**: T - Expected value type after JSON parse.  
+**Typeparam**: T - Expected value type after JSON parse.
 
-| Param | Description |
-| --- | --- |
-| key | The storage key. |
+| Param | Description      |
+| ----- | ---------------- |
+| key   | The storage key. |
 
 <a name="Storage+remove"></a>
 
 ### storage.remove(key)
+
 Removes a key and its expiration metadata.
 
-**Kind**: instance method of [<code>Storage</code>](#Storage)  
+**Kind**: instance method of [<code>Storage</code>](#Storage)
 
-| Param | Description |
-| --- | --- |
-| key | The storage key to remove. |
+| Param | Description                |
+| ----- | -------------------------- |
+| key   | The storage key to remove. |
 
 <a name="Storage+clear"></a>
 
 ### storage.clear()
+
 Clears all keys from the current MMKV instance.
 
-**Kind**: instance method of [<code>Storage</code>](#Storage)  
+**Kind**: instance method of [<code>Storage</code>](#Storage)
 
 ## Author
 
