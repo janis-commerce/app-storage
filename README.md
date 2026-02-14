@@ -1,6 +1,7 @@
 # App Storage
 
-[![npm version](https://badge.fury.io/js/@janis-commerce%2Fapp-storage.svg)](https://www.npmjs.com/package/@janis-commerce/app-storage)
+[![npm version](https://img.shields.io/npm/v/@janiscommerce/app-storage)](https://www.npmjs.com/package/@janiscommerce/app-storage)
+[![package size](https://img.shields.io/npm/unpacked-size/@janiscommerce/app-storage)](https://www.npmjs.com/package/@janiscommerce/app-storage)
 
 A thin wrapper around [react-native-mmkv](https://github.com/mrousavy/react-native-mmkv) with optional per-key expiration (TTL) and version-based invalidation.
 

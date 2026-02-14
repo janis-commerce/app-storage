@@ -65,4 +65,11 @@ types/
 ## build folder
 dist
 
+# IDE and AI tools
+.cursor/
+.claude/settings.local.json
+.claude/teams/
+.claude/tasks/
+.claude/projects/
+
 

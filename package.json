@@ -38,6 +38,11 @@
 		"url": "https://github.com/janis-commerce/app-storage/issues"
 	},
 	"homepage": "https://github.com/janis-commerce/app-storage#readme",
+	"files": [
+		"dist",
+		"README.md",
+		"CHANGELOG.md"
+	],
 	"peerDependencies": {
 		"@janiscommerce/app-device-info": "^1.0.0",
 		"react": ">=17.0.2 <19.0.0",
