@@ -2,15 +2,16 @@
 
 [![npm version](https://badge.fury.io/js/@janis-commerce%2Fapp-storage.svg)](https://www.npmjs.com/package/@janis-commerce/app-storage)
 
-A thin wrapper around [react-native-mmkv](https://github.com/mrousavy/react-native-mmkv) with optional per-key expiration (TTL).
+A thin wrapper around [react-native-mmkv](https://github.com/mrousavy/react-native-mmkv) with optional per-key expiration (TTL) and version-based invalidation.
 
 ## Features
 
-- 🚀 Fast and efficient key-value storage powered by MMKV
-- ⏰ Optional TTL (Time To Live) for automatic key expiration
-- 📦 Automatic JSON serialization for objects and arrays
-- 🔒 Type-safe with TypeScript support
-- 🪶 Lightweight and easy to use
+- Fast and efficient key-value storage powered by MMKV
+- Optional TTL (Time To Live) for automatic key expiration
+- Version-based invalidation: automatically expire data when the app version changes
+- Automatic JSON serialization for objects and arrays
+- Type-safe with TypeScript support
+- Lightweight and easy to use
 
 ## Installation
 
@@ -20,20 +21,24 @@ npm install @janiscommerce/app-storage
 
 ### Peer Dependencies
 
-This package requires `react-native-mmkv` as a peer dependency:
+This package requires the following peer dependencies:
 
 ```bash
-npm install react-native-mmkv
+npm install react-native-mmkv @janiscommerce/app-device-info
 ```
 
-This package uses `react-native-mmkv` as its high-performance native storage engine.
-Because MMKV contains native code (Android/iOS), it must be installed in the host React Native app, not within this package, to ensure proper autolinking and native build integration.
+| Package | Required for |
+| --- | --- |
+| `react-native-mmkv` | High-performance native storage engine |
+| `@janiscommerce/app-device-info` | Version-based invalidation (provides app version) |
+
+> **Note:** `@janiscommerce/app-device-info` is only required if you use the `expireWithVersion` option. If you only use TTL-based expiration, you do not need it. However, it is listed as a peer dependency and will generate a warning if not installed.
 
 ### Why peerDependency instead of dependency?
 
-React Native only autolinks native modules located in the app’s root node_modules.
-If MMKV were installed as a regular dependency, it would live inside
-node_modules/@janiscommerce/app-storage/node_modules/react-native-mmkv, preventing autolinking and causing runtime errors such as:
+React Native only autolinks native modules located in the app's root node_modules.
+If these packages were installed as regular dependencies, they would be nested inside
+`node_modules/@janiscommerce/app-storage/node_modules/`, preventing autolinking and causing runtime errors.
 
 ## Quick Start
 
@@ -72,6 +77,47 @@ storage.set('session-token', 'xyz789', { expiresAt: 5 });
 const token = storage.get('session-token');
 ```
 
+## Usage with Version-based Invalidation
+
+You can mark stored data to automatically expire when the app version changes. This is useful for cached data that should be refreshed after an app update (e.g., feature flags, remote config, API responses tied to a specific app version).
+
+```typescript
+import Storage from '@janis-commerce/app-storage';
+
+const storage = new Storage();
+
+// Store a value that expires when the app version changes
+storage.set('feature-flags', { darkMode: true, newUI: false }, { expireWithVersion: true });
+
+// On the same app version, this returns the stored value
+const flags = storage.get('feature-flags'); // { darkMode: true, newUI: false }
+
+// After an app update (version change), this returns null
+const staleFlags = storage.get('feature-flags'); // null (invalidated)
+```
+
+### Combining TTL and Version-based Invalidation
+
+Both options can be used together. The data will be invalidated if **either** condition is met: the TTL expires **or** the app version changes, whichever comes first.
+
+```typescript
+import Storage from '@janis-commerce/app-storage';
+
+const storage = new Storage();
+
+// Expires after 60 minutes OR when the app version changes
+storage.set('api-config', { baseUrl: 'https://api.example.com' }, {
+  expiresAt: 60,
+  expireWithVersion: true,
+});
+```
+
+### How it works
+
+When `expireWithVersion: true` is passed to `set()`, the current app version (obtained from `@janiscommerce/app-device-info`) is saved alongside the value in its metadata. On `get()`, the stored version is compared against the current app version. If they differ, the key is invalidated and `null` is returned.
+
+The version check is performed **before** the TTL check. This means version-invalidated data is cleaned up immediately, without waiting for the TTL to expire.
+
 ## Multiple Storage Instances
 
 You can create multiple isolated storage instances for different purposes:
@@ -94,15 +140,16 @@ sessionStorage.set('temp-data', { foo: 'bar' });
 
 ## Storage
 
-A thin wrapper around MMKV with optional per-key expiration (TTL).
+A thin wrapper around MMKV with optional per-key expiration (TTL) and version-based invalidation.
 
 - Serializes objects/arrays to JSON on set.
 - get() attempts JSON parse; otherwise returns string/number/boolean.
 - Optional per-key expiration via `expiresAt` (minutes from now).
-- Expired keys are automatically removed on get().
+- Optional version-based invalidation via `expireWithVersion`.
+- Expired or version-invalidated keys are automatically removed on get().
 - remove() deletes the value and its expiration metadata.
 
-**Kind**: global class  
+**Kind**: global class
 **Access**: public
 
 - [Storage](#Storage)
@@ -126,7 +173,7 @@ Creates a new Storage instance.
 
 ### storage.set(key, value, options)
 
-Stores a value by key with optional expiration.
+Stores a value by key with optional expiration and version tracking.
 
 Semantics:
 
@@ -137,25 +184,32 @@ Semantics:
 
 Expiration:
 
-- options.expiresAt: minutes from now until expiration.
-- Stored under `${key}:__meta` as an absolute timestamp in milliseconds.
+- `options.expiresAt`: minutes from now until expiration. Stored under `${key}:__meta` as an absolute timestamp in milliseconds.
+- `options.expireWithVersion`: when `true`, the current app version is saved in metadata. On retrieval, if the stored version differs from the current version, the key is invalidated.
 
 **Kind**: instance method of [<code>Storage</code>](#Storage)
 
-| Param   | Description                        |
-| ------- | ---------------------------------- |
-| key     | The storage key.                   |
-| value   | The value to store.                |
-| options | Optional expiration configuration. |
+| Param   | Type | Description |
+| ------- | ---- | --- |
+| key     | `string` | The storage key. |
+| value   | `unknown` | The value to store. |
+| options | `object` | Optional configuration. |
+| options.expiresAt | `number` | Minutes from now until expiration. |
+| options.expireWithVersion | `boolean` | If `true`, stores the current app version and invalidates the key when the version changes. |
 
 <a name="Storage+get"></a>
 
 ### storage.get(key) ⇒
 
-Retrieves a value by key. If expired or metadata is invalid, the key is removed and null is returned.
+Retrieves a value by key. Returns `null` and cleans up stored data if any of these conditions are met:
+- The stored app version differs from the current app version (version invalidation).
+- The TTL has expired (time-based expiration).
+- The metadata is corrupted or invalid.
 
-**Kind**: instance method of [<code>Storage</code>](#Storage)  
-**Returns**: Parsed JSON as T, or string/number/boolean; null if missing/expired/invalid.  
+Version check is performed **before** TTL check.
+
+**Kind**: instance method of [<code>Storage</code>](#Storage)
+**Returns**: Parsed JSON as T, or string/number/boolean; null if missing/expired/version-invalidated/invalid.
 **Typeparam**: T - Expected value type after JSON parse.
 
 | Param | Description      |
@@ -181,6 +235,68 @@ Removes a key and its expiration metadata.
 Clears all keys from the current MMKV instance.
 
 **Kind**: instance method of [<code>Storage</code>](#Storage)
+
+## Use Cases
+
+### Recommended use cases for `expireWithVersion`
+
+| Use case | Why |
+| --- | --- |
+| Feature flags / remote config | Ensures stale flags from a previous version are not applied after an update. |
+| Cached API responses | API contracts may change between app versions; cached responses could become incompatible. |
+| Onboarding / tutorial state | After an update you may want to re-show onboarding for new features. |
+| Computed or derived data | Cached computations that depend on app logic which may have changed. |
+
+### NOT recommended for `expireWithVersion`
+
+| Use case | Why |
+| --- | --- |
+| User preferences (theme, language) | These should persist across updates. Use plain `set()` without `expireWithVersion`. |
+| Authentication tokens | Tokens have their own expiration mechanisms. Use `expiresAt` instead. |
+| User-generated content (drafts, notes) | Losing user data on update is a poor experience. |
+| Data unrelated to app version | If the data does not depend on the app version, there is no reason to invalidate it. |
+
+## Error Handling
+
+### Version retrieval failure
+
+If `@janiscommerce/app-device-info` is not installed or `DeviceInfo.getVersion()` throws an error, the library degrades gracefully:
+
+- **On `set()` with `expireWithVersion: true`:** If the version cannot be obtained, the `appVersion` field is **not** written to metadata. The value is still stored normally, and will behave as if `expireWithVersion` was not set.
+- **On `get()`:** If the version cannot be obtained at read time, version validation is **skipped**. The value is returned normally (subject to TTL expiration if configured).
+
+This ensures that a missing or broken dependency never causes data loss or crashes.
+
+### Corrupted metadata
+
+If the metadata stored under `${key}:__meta` is corrupted (invalid JSON), both the key and its metadata are deleted, and `get()` returns `null`. This prevents inconsistent state from persisting.
+
+## Backward Compatibility
+
+This feature is fully backward compatible:
+
+- **Existing stored data** (without `appVersion` in metadata) continues to work normally. The absence of `appVersion` is treated as "no version constraint" -- the key is never invalidated by version checks.
+- **The `set()` API** remains unchanged for existing usage. The `expireWithVersion` option is purely additive; omitting it preserves the previous behavior.
+- **Metadata format** is extended, not replaced. The `__meta` key now supports an optional `appVersion` field alongside the existing `expiresAt` field:
+
+```json
+// Before (TTL only)
+{ "expiresAt": 1700000000000 }
+
+// After (TTL + version)
+{ "expiresAt": 1700000000000, "appVersion": "2.1.0" }
+
+// Version only (no TTL)
+{ "appVersion": "2.1.0" }
+```
+
+## Implementation Details
+
+- The app version is obtained via `DeviceInfo.getVersion()` from `@janiscommerce/app-device-info`.
+- Version comparison uses strict string equality (`===`). For example, `"1.0.0"` and `"1.0.1"` are considered different versions.
+- The version string is stored as-is in the metadata. No semantic version parsing is performed.
+- On `get()`, the validation order is: **version check** then **TTL check**. If the version is invalid, the key is removed immediately without evaluating TTL.
+- The `getAppVersion()` helper is wrapped in a try-catch. Any exception results in a `console.warn` and a `null` return value, ensuring robust behavior even when the device info package is unavailable.
 
 ## Author
 

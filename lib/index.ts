@@ -1,161 +1,133 @@
 import { MMKV } from 'react-native-mmkv';
+import { getAppVersion, serializeValue, parseValue } from './helpers';
 
 interface StorageOptions {
-	/**
-	 * Identifier for the underlying MMKV instance.
-	 * @remarks Defaults to 'app-storage' when omitted.
-	 */
+	/** MMKV instance ID (default: 'app-storage') */
 	id?: string;
 }
 
+interface SetOptions {
+	/** Minutes until expiration */
+	expiresAt?: number;
+	/** Invalidate when app version changes */
+	expireWithVersion?: boolean;
+}
+
+interface Metadata {
+	/** Expiration timestamp in ms */
+	expiresAt?: number;
+	/** App version when stored */
+	appVersion?: string;
+}
+
 /**
- * A thin wrapper around MMKV with optional per-key expiration (TTL).
- *
- * - Serializes objects/arrays to JSON on set.
- * - get() attempts JSON parse; otherwise returns string/number/boolean.
- * - Optional per-key expiration via `expiresAt` (minutes from now).
- * - Expired keys are automatically removed on get().
- * - remove() deletes the value and its expiration metadata.
- * @public
+ * MMKV wrapper with TTL and version-based invalidation.
+ * Supports auto-serialization, expiration, and version tracking.
  */
 class Storage {
-	private readonly storage: MMKV;
 	private static readonly META_SUFFIX = ':__meta';
 	private static readonly MILLISECONDS_PER_MINUTE = 60_000;
 
-	/**
-	 * The underlying MMKV instance for advanced operations.
-	 * @public
-	 */
+	/** MMKV instance for advanced operations */
 	public readonly db: MMKV;
 
-	/**
-	 * Creates a new Storage instance.
-	 * @param options - Initialization options for the underlying MMKV instance.
-	 */
+	/** @param options.id - MMKV instance ID */
 	constructor(options: StorageOptions = {}) {
-		const { id } = options;
-		this.storage = new MMKV({ id: id || 'app-storage' });
-		this.db = this.storage;
+		this.db = new MMKV({ id: options.id || 'app-storage' });
 	}
 
 	private metaKey(key: string): string {
 		return `${key}${Storage.META_SUFFIX}`;
 	}
 
-	/**
-	 * Stores a value by key with optional expiration.
-	 *
-	 * Semantics:
-	 * - key null/undefined: no-op
-	 * - value null/undefined: no-op (null will not be stored; it is ignored)
-	 * - string/number/boolean are stored as string
-	 * - objects/arrays are serialized to JSON
-	 *
-	 * Expiration:
-	 * - options.expiresAt: minutes from now until expiration.
-	 * - Stored under `${key}:__meta` as an absolute timestamp in milliseconds.
-	 *
-	 * @param key - The storage key.
-	 * @param value - The value to store.
-	 * @param options - Optional expiration configuration.
-	 */
-	public set(key: string, value: unknown, options?: { expiresAt?: number }): void {
-		if (key == null || value == null) return;
+	/** Saves metadata (TTL and/or version) for a key */
+	private saveMetadata(key: string, options?: SetOptions): void {
+		if (!options?.expiresAt && !options?.expireWithVersion) return;
 
-		const storageKey = key;
-		const metaKey = this.metaKey(storageKey);
+		const meta: Metadata = {};
 
-		const valueType = typeof value;
-		if (valueType === 'string') {
-			this.storage.set(storageKey, value as string);
-			return;
+		if (options.expiresAt != null) {
+			meta.expiresAt = Date.now() + options.expiresAt * Storage.MILLISECONDS_PER_MINUTE;
 		}
 
-		if (valueType === 'number' || valueType === 'boolean') {
-			this.storage.set(storageKey, String(value));
-			return;
+		if (options.expireWithVersion === true) {
+			const version = getAppVersion();
+			if (version != null) meta.appVersion = version;
 		}
+
+		if (meta.expiresAt != null || meta.appVersion != null) {
+			this.db.set(this.metaKey(key), JSON.stringify(meta));
+		}
+	}
+
+	/** Checks if key is expired (version or TTL) and removes it */
+	private isExpired(key: string): boolean {
+		const metaRaw = this.db.getString(this.metaKey(key));
+
+		if (metaRaw == null) return false;
 
 		try {
-			const serialized = JSON.stringify(value);
-			this.storage.set(storageKey, serialized);
+			const meta = JSON.parse(metaRaw) as Metadata;
+
+			if (meta.appVersion != null) {
+				const currentVersion = getAppVersion();
+				if (currentVersion != null && currentVersion !== meta.appVersion) {
+					this.remove(key);
+					return true;
+				}
+			}
+
+			if (meta.expiresAt != null && Date.now() > meta.expiresAt) {
+				this.remove(key);
+				return true;
+			}
+
+			return false;
 		} catch {
-			this.storage.set(storageKey, String(value));
-		}
-
-		if (options?.expiresAt != null) {
-			const minutes = options.expiresAt;
-			const expiresAt = Date.now() + minutes * Storage.MILLISECONDS_PER_MINUTE;
-
-			this.storage.set(metaKey, JSON.stringify({ expiresAt }));
+			this.remove(key);
+			return true;
 		}
 	}
 
 	/**
-	 * Retrieves a value by key. If expired or metadata is invalid, the key is removed and null is returned.
-	 * @typeParam T - Expected value type after JSON parse.
-	 * @param key - The storage key.
-	 * @returns Parsed JSON as T, or string/number/boolean; null if missing/expired/invalid.
+	 * Stores a value with optional expiration.
+	 * @param options.expiresAt - Minutes until expiration
+	 * @param options.expireWithVersion - Invalidate on version change
+	 */
+	public set(key: string, value: unknown, options?: SetOptions): void {
+		if (key == null || value == null) return;
+
+		this.db.set(key, serializeValue(value));
+		this.saveMetadata(key, options);
+	}
+
+	/**
+	 * Gets a value. Returns null if missing/expired. Auto-removes expired keys.
+	 * @typeParam T - Expected return type
 	 */
 	public get<T = unknown>(key: string): T | null | undefined {
 		if (key == null) return null;
 
-		const storageKey = key;
-		const metaKey = this.metaKey(storageKey);
+		if (this.isExpired(key)) return null;
 
-		const metaRaw = this.storage.getString(metaKey);
-
-		if (metaRaw != null) {
-			try {
-				const meta = JSON.parse(metaRaw) as { expiresAt?: number };
-				if (meta?.expiresAt != null && Date.now() > meta.expiresAt) {
-					this.storage.delete(storageKey);
-					this.storage.delete(metaKey);
-					return null;
-				}
-			} catch {
-				// If metadata is invalid/corrupt, delete to avoid inconsistencies
-				this.storage.delete(storageKey);
-				this.storage.delete(metaKey);
-				return null;
-			}
-		}
-
-		const stored = this.storage.getString(storageKey);
+		const stored = this.db.getString(key);
 
 		if (stored == null) return null;
 
-		try {
-			return JSON.parse(stored) as T;
-		} catch {
-			if (stored === 'true') return true as unknown as T;
-			if (stored === 'false') return false as unknown as T;
-			const asNumber = Number(stored);
-			if (!Number.isNaN(asNumber) && stored.trim() !== '') {
-				return asNumber as unknown as T;
-			}
-			return stored as unknown as T;
-		}
+		return parseValue<T>(stored);
 	}
 
-	/**
-	 * Removes a key and its expiration metadata.
-	 * @param key - The storage key to remove.
-	 */
+	/** Removes a key and its metadata */
 	public remove(key: string): void {
 		if (key == null) return;
-		const storageKey = key;
-		const metaKey = this.metaKey(storageKey);
-		this.storage.delete(storageKey);
-		this.storage.delete(metaKey);
+
+		this.db.delete(key);
+		this.db.delete(this.metaKey(key));
 	}
 
-	/**
-	 * Clears all keys from the current MMKV instance.
-	 */
+	/** Clears all keys */
 	public clear(): void {
-		this.storage.clearAll();
+		this.db.clearAll();
 	}
 }
 

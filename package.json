@@ -39,11 +39,13 @@
 	},
 	"homepage": "https://github.com/janis-commerce/app-storage#readme",
 	"peerDependencies": {
+		"@janiscommerce/app-device-info": "^1.0.0",
 		"react": ">=17.0.2 <19.0.0",
 		"react-native": ">=0.67.5 <0.75.0",
 		"react-native-mmkv": "^2.12.2"
 	},
 	"devDependencies": {
+		"@janiscommerce/app-device-info": "^1.0.0",
 		"@typescript-eslint/eslint-plugin": "^7.3.1",
 		"@typescript-eslint/parser": "^7.3.1",
 		"@vitest/coverage-v8": "^0.34.6",

@@ -23,4 +23,11 @@ vi.mock('react-native-mmkv', () => ({
 	MMKV: vi.fn().mockImplementation(() => mockMMKVInstance),
 }));
 
-export { mockMMKVInstance, mockStorage };
+// Mock @janiscommerce/app-device-info
+const mockGetVersion = vi.fn(() => '1.0.0');
+
+vi.mock('@janiscommerce/app-device-info', () => ({
+	getVersion: mockGetVersion,
+}));
+
+export { mockMMKVInstance, mockStorage, mockGetVersion };
