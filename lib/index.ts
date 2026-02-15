@@ -42,7 +42,14 @@ class Storage {
 
 	/** Saves metadata (TTL and/or version) for a key */
 	private saveMetadata(key: string, options?: SetOptions): void {
-		if (!options?.expiresAt && !options?.expireWithVersion) return;
+		const hasExpiration = options?.expiresAt !== undefined;
+		const hasVersionTracking = options?.expireWithVersion === true;
+
+		if (!hasExpiration && !hasVersionTracking) {
+			// No metadata needed - delete any existing metadata
+			this.db.delete(this.metaKey(key));
+			return;
+		}
 
 		const meta: Metadata = {};
 
@@ -57,6 +64,9 @@ class Storage {
 
 		if (meta.expiresAt != null || meta.appVersion != null) {
 			this.db.set(this.metaKey(key), JSON.stringify(meta));
+		} else {
+			// Clean up metadata if no valid fields
+			this.db.delete(this.metaKey(key));
 		}
 	}
 
@@ -69,14 +79,23 @@ class Storage {
 		try {
 			const meta = JSON.parse(metaRaw) as Metadata;
 
+			// Version check FIRST (strict mode)
 			if (meta.appVersion != null) {
 				const currentVersion = getAppVersion();
-				if (currentVersion != null && currentVersion !== meta.appVersion) {
+
+				// STRICT: If we cannot get version but metadata has one, invalidate
+				if (currentVersion == null) {
+					this.remove(key);
+					return true;
+				}
+
+				if (currentVersion !== meta.appVersion) {
 					this.remove(key);
 					return true;
 				}
 			}
 
+			// TTL check SECOND
 			if (meta.expiresAt != null && Date.now() > meta.expiresAt) {
 				this.remove(key);
 				return true;
@@ -105,7 +124,7 @@ class Storage {
 	 * Gets a value. Returns null if missing/expired. Auto-removes expired keys.
 	 * @typeParam T - Expected return type
 	 */
-	public get<T = unknown>(key: string): T | null | undefined {
+	public get<T = unknown>(key: string): T | null {
 		if (key == null) return null;
 
 		if (this.isExpired(key)) return null;

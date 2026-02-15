@@ -31,9 +31,7 @@ npm install react-native-mmkv @janiscommerce/app-device-info
 | Package | Required for |
 | --- | --- |
 | `react-native-mmkv` | High-performance native storage engine |
-| `@janiscommerce/app-device-info` | Version-based invalidation (provides app version) |
-
-> **Note:** `@janiscommerce/app-device-info` is only required if you use the `expireWithVersion` option. If you only use TTL-based expiration, you do not need it. However, it is listed as a peer dependency and will generate a warning if not installed.
+| `@janiscommerce/app-device-info` | Required peer dependency (provides app version for version-based invalidation) |
 
 ### Why peerDependency instead of dependency?
 
@@ -264,9 +262,9 @@ Clears all keys from the current MMKV instance.
 If `@janiscommerce/app-device-info` is not installed or `DeviceInfo.getVersion()` throws an error, the library degrades gracefully:
 
 - **On `set()` with `expireWithVersion: true`:** If the version cannot be obtained, the `appVersion` field is **not** written to metadata. The value is still stored normally, and will behave as if `expireWithVersion` was not set.
-- **On `get()`:** If the version cannot be obtained at read time, version validation is **skipped**. The value is returned normally (subject to TTL expiration if configured).
+- **On `get()`:** If the version cannot be obtained at read time but metadata contains an `appVersion`, the data is invalidated for safety. This prevents serving potentially incompatible cached data after an app update when version lookup temporarily fails. If metadata does not contain an `appVersion`, the value is returned normally (subject to TTL expiration if configured).
 
-This ensures that a missing or broken dependency never causes data loss or crashes.
+This ensures that a missing or broken dependency never causes data loss or crashes, while maintaining strict version validation when version tracking is enabled.
 
 ### Corrupted metadata
 

@@ -46,7 +46,7 @@ describe('Storage', () => {
 
 	describe('set', () => {
 		it.each([
-			['string', 'test-key', 'test-value', 'test-value'],
+			['string', 'test-key', 'test-value', '"test-value"'],
 			['number', 'number-key', 123, '123'],
 			['boolean true', 'boolean-key', true, 'true'],
 			['boolean false', 'boolean-key', false, 'false'],
@@ -114,7 +114,7 @@ describe('Storage', () => {
 			mockGetVersion.mockReturnValue('2.0.0');
 			storage.set('versioned-key', 'value', { expireWithVersion: true });
 
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('versioned-key', 'value');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('versioned-key', '"value"');
 			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
 				'versioned-key:__meta',
 				JSON.stringify({ appVersion: '2.0.0' }),
@@ -143,16 +143,19 @@ describe('Storage', () => {
 			mockGetVersion.mockReturnValue('');
 			storage.set('no-version-key', 'value', { expireWithVersion: true });
 
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('no-version-key', 'value');
-			// No metadata call since version is invalid
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('no-version-key', '"value"');
+			// No metadata call since version is invalid, but metadata deletion call is made
 			expect(mockMMKVInstance.set).toHaveBeenCalledTimes(1);
+			expect(mockMMKVInstance.delete).toHaveBeenCalledWith('no-version-key:__meta');
 		});
 
 		it('should not store metadata when expireWithVersion is false', () => {
 			storage.set('no-expire-key', 'value', { expireWithVersion: false });
 
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('no-expire-key', 'value');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('no-expire-key', '"value"');
 			expect(mockMMKVInstance.set).toHaveBeenCalledTimes(1);
+			// Should delete metadata since no options are set
+			expect(mockMMKVInstance.delete).toHaveBeenCalledWith('no-expire-key:__meta');
 		});
 
 		it('should continue without appVersion in metadata when getVersion throws', () => {
@@ -161,19 +164,66 @@ describe('Storage', () => {
 			});
 			storage.set('error-key', 'value', { expireWithVersion: true });
 
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('error-key', 'value');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('error-key', '"value"');
 			// No metadata because getVersion failed and no other options set
 			expect(mockMMKVInstance.set).toHaveBeenCalledTimes(1);
+			expect(mockMMKVInstance.delete).toHaveBeenCalledWith('error-key:__meta');
 		});
 
 		it('should store string with TTL metadata', () => {
 			storage.set('ttl-string', 'hello', { expiresAt: 10 });
 
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-string', 'hello');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('ttl-string', '"hello"');
 			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
 				'ttl-string:__meta',
 				expect.stringContaining('expiresAt'),
 			);
+		});
+
+		it('should save metadata with expiresAt: 0 (issue #2)', () => {
+			storage.set('immediate', 'data', { expiresAt: 0 });
+
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('immediate', '"data"');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
+				'immediate:__meta',
+				expect.stringContaining('expiresAt'),
+			);
+		});
+
+		it('should clear appVersion metadata when set without expireWithVersion (issue #3)', () => {
+			mockGetVersion.mockReturnValue('1.0.0');
+			storage.set('key', 'v1', { expireWithVersion: true });
+
+			// Verify metadata has appVersion
+			const meta1 = JSON.parse(mockStorage.get('key:__meta') as string);
+			expect(meta1.appVersion).toBe('1.0.0');
+
+			// Set again without expireWithVersion
+			storage.set('key', 'v2');
+
+			// Metadata should be deleted (no expiresAt, no appVersion)
+			expect(mockStorage.get('key:__meta')).toBeUndefined();
+		});
+
+		it('should preserve string type for numeric strings (issue #5)', () => {
+			storage.set('code', '42');
+
+			// Should be stored as JSON string
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('code', '"42"');
+		});
+
+		it('should preserve leading zeros in strings (issue #5)', () => {
+			storage.set('zip', '00123');
+
+			// Should be stored as JSON string
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('zip', '"00123"');
+		});
+
+		it('should preserve string "true" as string type (issue #5)', () => {
+			storage.set('flag', 'true');
+
+			// Should be stored as JSON string, not boolean
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('flag', '"true"');
 		});
 	});
 
@@ -287,7 +337,7 @@ describe('Storage', () => {
 			expect(mockMMKVInstance.delete).not.toHaveBeenCalled();
 		});
 
-		it('should return value when getVersion fails and metadata has appVersion', () => {
+		it('should invalidate when getVersion fails but metadata has appVersion (strict mode - issue #4)', () => {
 			mockGetVersion.mockImplementation(() => {
 				throw new Error('Device info unavailable');
 			});
@@ -296,9 +346,10 @@ describe('Storage', () => {
 			mockMMKVInstance.getString.mockReturnValueOnce(meta).mockReturnValueOnce('"data"');
 
 			const result = storage.get('error-version-key');
-			// getAppVersion returns null on error, so version check is skipped
-			expect(result).toBe('data');
-			expect(mockMMKVInstance.delete).not.toHaveBeenCalled();
+			// STRICT: getAppVersion returns null on error, but metadata has appVersion → invalidate
+			expect(result).toBeNull();
+			expect(mockMMKVInstance.delete).toHaveBeenCalledWith('error-version-key');
+			expect(mockMMKVInstance.delete).toHaveBeenCalledWith('error-version-key:__meta');
 		});
 
 		it('should check version before TTL expiration', () => {
@@ -361,6 +412,39 @@ describe('Storage', () => {
 			const result = storage.get('only-version-key');
 			expect(result).toBe('only-version');
 		});
+
+		it('should return string "42" as string type, not number (issue #5)', () => {
+			mockMMKVInstance.getString
+				.mockReturnValueOnce(undefined) // No metadata
+				.mockReturnValueOnce('"42"'); // JSON stringified string
+
+			const result = storage.get<string>('code');
+
+			expect(result).toBe('42');
+			expect(typeof result).toBe('string');
+		});
+
+		it('should preserve leading zeros in string values (issue #5)', () => {
+			mockMMKVInstance.getString
+				.mockReturnValueOnce(undefined) // No metadata
+				.mockReturnValueOnce('"00123"'); // JSON stringified string
+
+			const result = storage.get<string>('zip');
+
+			expect(result).toBe('00123');
+			expect(typeof result).toBe('string');
+		});
+
+		it('should return string "true" as string type, not boolean (issue #5)', () => {
+			mockMMKVInstance.getString
+				.mockReturnValueOnce(undefined) // No metadata
+				.mockReturnValueOnce('"true"'); // JSON stringified string
+
+			const result = storage.get<string>('flag');
+
+			expect(result).toBe('true');
+			expect(typeof result).toBe('string');
+		});
 	});
 
 	describe('remove', () => {
@@ -385,6 +469,38 @@ describe('Storage', () => {
 		});
 	});
 
+	describe('Backward compatibility with legacy format', () => {
+		it('should parse legacy number with explicit plus sign', () => {
+			mockMMKVInstance.getString
+				.mockReturnValueOnce(undefined) // No metadata
+				.mockReturnValueOnce('+123'); // Not valid JSON, but Number('+123') = 123
+
+			const result = storage.get('legacy-plus-number');
+			expect(result).toBe(123);
+			expect(typeof result).toBe('number');
+		});
+
+		it('should parse legacy decimal without leading zero', () => {
+			mockMMKVInstance.getString
+				.mockReturnValueOnce(undefined) // No metadata
+				.mockReturnValueOnce('.5'); // Not valid JSON, but Number('.5') = 0.5
+
+			const result = storage.get('legacy-decimal');
+			expect(result).toBe(0.5);
+			expect(typeof result).toBe('number');
+		});
+
+		it('should parse legacy plain strings (no JSON.stringify)', () => {
+			mockMMKVInstance.getString
+				.mockReturnValueOnce(undefined) // No metadata
+				.mockReturnValueOnce('hello world'); // Legacy format (plain string without quotes)
+
+			const result = storage.get('legacy-string');
+			expect(result).toBe('hello world');
+			expect(typeof result).toBe('string');
+		});
+	});
+
 	describe('Version-based expiration - edge cases', () => {
 		it('should return value when there is no metadata at all (backward compatibility)', () => {
 			mockMMKVInstance.getString
@@ -402,7 +518,7 @@ describe('Storage', () => {
 			});
 			storage.set('fallback-key', 'value', { expiresAt: 30, expireWithVersion: true });
 
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('fallback-key', 'value');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('fallback-key', '"value"');
 			const metaCall = mockMMKVInstance.set.mock.calls.find(
 				(call: string[]) => call[0] === 'fallback-key:__meta',
 			);
@@ -448,7 +564,8 @@ describe('Storage', () => {
 		it('should not store metadata when no options are provided', () => {
 			storage.set('simple-key', 'simple-value');
 			expect(mockMMKVInstance.set).toHaveBeenCalledTimes(1);
-			expect(mockMMKVInstance.set).toHaveBeenCalledWith('simple-key', 'simple-value');
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('simple-key', '"simple-value"');
+			expect(mockMMKVInstance.delete).toHaveBeenCalledWith('simple-key:__meta');
 		});
 	});
 });
