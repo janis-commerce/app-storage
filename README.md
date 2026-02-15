@@ -42,7 +42,7 @@ If these packages were installed as regular dependencies, they would be nested i
 ## Quick Start
 
 ```typescript
-import Storage from '@janis-commerce/app-storage';
+import Storage from '@janiscommerce/app-storage';
 
 // Create a storage instance
 const storage = new Storage({ id: 'my-app-storage' });
@@ -65,7 +65,7 @@ storage.clear();
 ## Usage with TTL (Time To Live)
 
 ```typescript
-import Storage from '@janis-commerce/app-storage';
+import Storage from '@janiscommerce/app-storage';
 
 const storage = new Storage();
 
@@ -81,7 +81,7 @@ const token = storage.get('session-token');
 You can mark stored data to automatically expire when the app version changes. This is useful for cached data that should be refreshed after an app update (e.g., feature flags, remote config, API responses tied to a specific app version).
 
 ```typescript
-import Storage from '@janis-commerce/app-storage';
+import Storage from '@janiscommerce/app-storage';
 
 const storage = new Storage();
 
@@ -100,7 +100,7 @@ const staleFlags = storage.get('feature-flags'); // null (invalidated)
 Both options can be used together. The data will be invalidated if **either** condition is met: the TTL expires **or** the app version changes, whichever comes first.
 
 ```typescript
-import Storage from '@janis-commerce/app-storage';
+import Storage from '@janiscommerce/app-storage';
 
 const storage = new Storage();
 
@@ -122,7 +122,7 @@ The version check is performed **before** the TTL check. This means version-inva
 You can create multiple isolated storage instances for different purposes:
 
 ```typescript
-import Storage from '@janis-commerce/app-storage';
+import Storage from '@janiscommerce/app-storage';
 
 const userStorage = new Storage({ id: 'user-data' });
 const cacheStorage = new Storage({ id: 'cache' });
