@@ -6,10 +6,6 @@ import { getVersion } from '@janiscommerce/app-device-info';
  * Uses `getVersion()` from `@janiscommerce/app-device-info` to obtain
  * the app version string (e.g. "1.2.3").
  *
- * This is an optional peer dependency. If not installed, the function will
- * catch the import error and return `null`, causing `expireWithVersion` to
- * be silently ignored.
- *
  * @returns The application version string, or `null` if it cannot be obtained.
  *
  * @example

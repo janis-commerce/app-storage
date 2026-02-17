@@ -17,23 +17,21 @@ A thin wrapper around [react-native-mmkv](https://github.com/mrousavy/react-nati
 ## Installation
 
 ```bash
-npm install @janiscommerce/app-storage react-native-mmkv
+npm install @janiscommerce/app-storage
 ```
 
-### Optional: Version-based invalidation
+### Peer Dependencies
 
-If you plan to use the `expireWithVersion` option, install this additional peer dependency:
+This package requires the following peer dependencies:
 
 ```bash
-npm install @janiscommerce/app-device-info
+npm install react-native-mmkv @janiscommerce/app-device-info
 ```
 
-| Package | Required | Purpose |
-| --- | --- | --- |
-| `react-native-mmkv` | ✅ Yes | High-performance native storage engine |
-| `@janiscommerce/app-device-info` | ⚠️ Optional | Version-based invalidation (only needed if using `expireWithVersion`) |
-
-> **Note:** If `@janiscommerce/app-device-info` is not installed, the `expireWithVersion` option will be silently ignored and data will be stored without version tracking.
+| Package | Required for |
+| --- | --- |
+| `react-native-mmkv` | High-performance native storage engine |
+| `@janiscommerce/app-device-info` | App version for version-based invalidation |
 
 ### Why peerDependency instead of dependency?
 
@@ -261,12 +259,12 @@ Clears all keys from the current MMKV instance.
 
 ### Version retrieval failure
 
-If `@janiscommerce/app-device-info` is not installed or `getVersion()` throws an error, the library degrades gracefully:
+If `getVersion()` throws an error, the library degrades gracefully:
 
 - **On `set()` with `expireWithVersion: true`:** If the version cannot be obtained, the `appVersion` field is **not** written to metadata. The value is still stored normally, and will behave as if `expireWithVersion` was not set.
 - **On `get()`:** If the version cannot be obtained at read time but metadata contains an `appVersion`, the data is **invalidated for safety**. This prevents serving potentially incompatible cached data after an app update when version lookup temporarily fails. If metadata does not contain an `appVersion`, the value is returned normally (subject to TTL expiration if configured).
 
-This ensures that a missing or broken dependency never causes data loss or crashes, while maintaining strict version validation when version tracking is enabled.
+This ensures that errors during version lookup never cause data loss or crashes, while maintaining strict version validation when version tracking is enabled.
 
 ### Corrupted metadata
 
