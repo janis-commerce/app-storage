@@ -110,6 +110,26 @@ describe('Storage', () => {
 			expect(mockMMKVInstance.set).toHaveBeenCalledWith('circular', '[object Object]');
 		});
 
+		it('should handle function values (JSON.stringify returns undefined)', () => {
+			const fn = () => 'test';
+			storage.set('function-key', fn);
+
+			// JSON.stringify(function) returns undefined, so we fallback to String()
+			// Arrow functions: () => 'test', Regular functions: function name() {}
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith('function-key', '() => "test"');
+		});
+
+		it('should handle Symbol values (JSON.stringify returns undefined)', () => {
+			const sym = Symbol('test');
+			storage.set('symbol-key', sym);
+
+			// JSON.stringify(Symbol) returns undefined, so we fallback to String()
+			expect(mockMMKVInstance.set).toHaveBeenCalledWith(
+				'symbol-key',
+				expect.stringContaining('Symbol'),
+			);
+		});
+
 		it('should store appVersion in metadata when expireWithVersion is true', () => {
 			mockGetVersion.mockReturnValue('2.0.0');
 			storage.set('versioned-key', 'value', { expireWithVersion: true });

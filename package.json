@@ -49,6 +49,11 @@
 		"react-native": ">=0.67.5 <0.75.0",
 		"react-native-mmkv": "^2.12.2"
 	},
+	"peerDependenciesMeta": {
+		"@janiscommerce/app-device-info": {
+			"optional": true
+		}
+	},
 	"devDependencies": {
 		"@janiscommerce/app-device-info": "^1.0.0",
 		"@typescript-eslint/eslint-plugin": "^7.3.1",
