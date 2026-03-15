@@ -1,6 +1,6 @@
 {
 	"name": "@janiscommerce/app-storage",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"description": "App Storage",
 	"main": "dist/index.js",
 	"type": "module",
@@ -45,8 +45,8 @@
 	],
 	"peerDependencies": {
 		"@janiscommerce/app-device-info": "^1.0.0",
-		"react": ">=17.0.2 <19.0.0",
-		"react-native": ">=0.67.5 <0.75.0",
+		"react": ">=17.0.2 <20.0.0",
+		"react-native": ">=0.71.5 <0.82.0",
 		"react-native-mmkv": "^2.12.2"
 	},
 	"devDependencies": {
