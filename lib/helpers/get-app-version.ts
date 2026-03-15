@@ -1,10 +1,11 @@
-import { getVersion } from '@janiscommerce/app-device-info';
-
 /**
  * Retrieves the current application version from the device info.
  *
  * Uses `getVersion()` from `@janiscommerce/app-device-info` to obtain
  * the app version string (e.g. "1.2.3").
+ *
+ * If `@janiscommerce/app-device-info` is not installed, returns `null`
+ * and version-based invalidation is silently disabled (graceful degradation).
  *
  * @returns The application version string, or `null` if it cannot be obtained.
  *
@@ -16,6 +17,8 @@ import { getVersion } from '@janiscommerce/app-device-info';
  */
 export const getAppVersion = (): string | null => {
 	try {
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		const { getVersion } = require('@janiscommerce/app-device-info');
 		const version = getVersion();
 
 		if (typeof version !== 'string' || version.trim() === '') {

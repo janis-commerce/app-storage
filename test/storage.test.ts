@@ -18,8 +18,7 @@ describe('Storage', () => {
 			mockStorage.set(key, value);
 		});
 		mockMMKVInstance.getString.mockImplementation((key: string) => {
-			const value = mockStorage.get(key);
-			return value !== undefined ? value : undefined;
+			return mockStorage.get(key);
 		});
 		mockMMKVInstance.delete.mockImplementation((key: string) => {
 			mockStorage.delete(key);

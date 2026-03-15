@@ -22,16 +22,22 @@ npm install @janiscommerce/app-storage
 
 ### Peer Dependencies
 
-This package requires the following peer dependencies:
-
 ```bash
-npm install react-native-mmkv @janiscommerce/app-device-info
+npm install react-native-mmkv
 ```
 
-| Package | Required for |
-| --- | --- |
-| `react-native-mmkv` | High-performance native storage engine |
-| `@janiscommerce/app-device-info` | App version for version-based invalidation |
+| Package | Required | Required for |
+| --- | --- | --- |
+| `react-native-mmkv` | Yes | High-performance native storage engine |
+| `@janiscommerce/app-device-info` | No (optional) | App version for version-based invalidation (`expireWithVersion`) |
+
+> **Note:** `@janiscommerce/app-device-info` is only needed if you use the `expireWithVersion` option. If not installed, all storage features work normally — version-based invalidation is simply disabled.
+
+To enable version-based invalidation:
+
+```bash
+npm install @janiscommerce/app-device-info
+```
 
 ### Why peerDependency instead of dependency?
 
