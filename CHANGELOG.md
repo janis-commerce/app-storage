@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [1.3.0-beta.0] - 2026-03-15
+
+### Added
+
+- Version-based invalidation: `expireWithVersion` option in `set()` to automatically expire stored data when the app version changes
+- If `@janiscommerce/app-device-info` is not installed, version-based invalidation is silently skipped instead of crashing
+
+### Changed
+
+- `@janiscommerce/app-device-info` is now an optional peer dependency (only required for `expireWithVersion`)
+- Updated `@janiscommerce/app-device-info` peer dependency to `^1.3.0`
+- Replaced static import of `@janiscommerce/app-device-info` with dynamic `require()` for optional loading
+
 ## [1.2.0] - 2026-02-21
 
 ### Added
