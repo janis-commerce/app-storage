@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [1.4.0-beta.0] - 2026-04-07
+
+### Added
+
+- `useStorageValue(key, storage)` hook for reactive storage reads in React components — re-renders automatically when the value changes via MMKV listeners
+- `Storage.subscribe(listener)` method to subscribe to value changes outside of React
+- `react` added as optional peer dependency (required only when using `useStorageValue`)
+
+### Changed
+
+- Reorganized storage module into `lib/storage/` subfolder for cleaner project structure
+- Switched coverage provider from V8 to Istanbul for accurate multi-environment coverage reporting
+- Coverage thresholds enforced in CI (`test:coverage`)
+
 ## [1.3.0] - 2026-03-17
 
 ### Added
