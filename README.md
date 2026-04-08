@@ -29,6 +29,7 @@ npm install react-native-mmkv
 | Package | Required | Required for |
 | --- | --- | --- |
 | `react-native-mmkv` | Yes | High-performance native storage engine |
+| `react` | No (optional) | Required only when using the `useStorageValue` hook |
 | `@janiscommerce/app-device-info` | No (optional) | App version for version-based invalidation (`expireWithVersion`) |
 
 > **Note:** `@janiscommerce/app-device-info` is only needed if you use the `expireWithVersion` option. If not installed, all storage features work normally — version-based invalidation is simply disabled.
@@ -240,6 +241,64 @@ Removes a key and its expiration metadata.
 Clears all keys from the current MMKV instance.
 
 **Kind**: instance method of [<code>Storage</code>](#Storage)
+
+## useStorageValue
+
+A React hook that subscribes to a storage key and returns its current value. Re-renders the component whenever the value changes.
+
+> **Requires React** as a peer dependency.
+
+### Signature
+
+```typescript
+useStorageValue<T>(key: string, storage: Storage): T | null
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `key` | `string` | The storage key to observe. |
+| `storage` | `Storage` | A Storage instance to read from and listen on. |
+
+Returns the current value for the key, or `null` if missing or expired.
+
+### Usage
+
+```typescript
+import Storage, { useStorageValue } from '@janiscommerce/app-storage';
+
+// Create a shared singleton instance
+const appStorage = new Storage({ id: 'app-storage' });
+
+// In your component
+const MyComponent = () => {
+    const userName = useStorageValue<string>('user-name', appStorage);
+
+    return <Text>{userName ?? 'No name'}</Text>;
+};
+```
+
+The hook re-renders automatically when `appStorage.set('user-name', ...)` is called from anywhere in the app — as long as all callers share the same `Storage` instance.
+
+### Important: use a shared instance
+
+The hook receives a `Storage` instance directly. To get reactivity across components, all callers must share the same instance. The recommended pattern is to create a singleton and export it:
+
+```typescript
+// storage.ts
+import Storage from '@janiscommerce/app-storage';
+
+export const appStorage = new Storage({ id: 'app-storage' });
+```
+
+```typescript
+// ComponentA.tsx — writes
+appStorage.set('user-name', 'Fernando');
+
+// ComponentB.tsx — reads and reacts
+const name = useStorageValue<string>('user-name', appStorage); // re-renders on change
+```
+
+If each component creates its own `new Storage(...)` instance, they will not share listeners and writes won't trigger re-renders.
 
 ## Use Cases
 
