@@ -18,10 +18,6 @@ export const parseValue = <T = unknown>(stored: string): T => {
 	try {
 		return JSON.parse(stored) as T;
 	} catch {
-		// Try boolean
-		if (stored === 'true') return true as unknown as T;
-		if (stored === 'false') return false as unknown as T;
-
 		// Try number
 		const asNumber = Number(stored);
 		if (!Number.isNaN(asNumber) && stored.trim() !== '') {
